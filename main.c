@@ -33,12 +33,12 @@ enum match_type {
     MATCHTYPE_CONSIST,
 };
 
-#define MAX_RULES_AMOUNT 10
+#define MAX_TIME_RANGES 10
 // currently there is only whitelist time for application
 struct sl_rule_t {
-    const char *app;                         // application name from /proc/PID/cmdline
-    enum match_type mt;                      // matching type for app name
-    struct sl_time_t time[MAX_RULES_AMOUNT]; // time ranges
+    const char *app;                        // application name from /proc/PID/comm
+    enum match_type mt;                     // matching type for app name
+    struct sl_time_t time[MAX_TIME_RANGES]; // time ranges
 };
 
 static struct sl_rule_t rules[] = {
