@@ -68,10 +68,8 @@ int sl_selector(const struct dirent *d){
     }
 
     // filter dirs without current user creds
-    // TODO: check is zero byte counted
-#define MAX_PATH_LEN 41
-    char path[MAX_PATH_LEN] = "/proc/";
-    strncat(path, d->d_name, MAX_PATH_LEN - 6 - 1);
+    char path[20];
+    snprintf(path, 20, "/proc/%s/", d->d_name);
 
     struct stat stb;
     if(stat(path, &stb)){
@@ -109,26 +107,19 @@ int sl_match(const char *app_name, struct sl_rule_t *rule){
 }
 
 void sl_get_app_name(char *app_name, const char *pid){
-    char *path;
-    SL_NEW0(path, 0x100);
-    strcpy(path, "/proc/");
-    strncat(path, pid, 10);
-    strcat(path, "/cmdline");
+    char path[64];
+    snprintf(path, 64, "/proc/%s/comm", pid);
 
     int fd = open(path, O_RDONLY);
-    assert(fd != -1 && "Cannot open file from /proc/PID/cmdline");
-    // TODO: use realloc with len of cmdline
-    read(fd, path, 0x100); // reuse variable for path of executed bin
+    if (fd == -1) {
+        printf("Cannot open file from %s", path);
+        assert(0);
+    }
+    read(fd, path, 64); // reuse variable for path of executed bin
     close(fd);
 
-    const char *name = strrchr(path, '/');
-    if (name == NULL)
-        name = path; // like cmdline which consist only exec from PATH
-    else
-        name++; // delete last /
-
-    strncpy(app_name, name, 0x40-1);
-    SL_FREE(path);
+    *strchr(path, '\n') = 0;
+    strncpy(app_name, path, 64);
 }
 
 void sl_parse_time(const char *time_from_rule, long *hours, long *mins){
@@ -182,7 +173,7 @@ bool sl_is_allowed(struct sl_rule_t *rule){
 }
 
 int sl_restrict(struct dirent ***namelist, int enum_amount){
-    char app_name[0x40] = "";
+    char app_name[64];
     for (unsigned int i = 0; ; ++i) {
         assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set '.app = NULL' for last rule");
         struct sl_rule_t *rule = &rules[i];
