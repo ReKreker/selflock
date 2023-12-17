@@ -1,0 +1,5 @@
+# Build info
+/cmake-build-*/
+/build/
+# IDE metadata
+/.idea/
