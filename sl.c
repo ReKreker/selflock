@@ -10,7 +10,12 @@
 
 #include "sl.h"
 
-// Matching functions
+/**
+ * match_* functions to match rule->app and /proc/PID/comm
+ * @param name_from_proc
+ * @param name_from_rule
+ * @return true if matched, so otherwise false
+ */
 __attribute__((unused)) bool match_exact(const char *name_from_proc, const char *name_from_rule) {
     if (strcmp(name_from_proc, name_from_rule) != 0)
         return false;
@@ -31,13 +36,9 @@ __attribute__((unused)) bool match_consists(const char *name_from_proc, const ch
 }
 
 
-
-
-static struct {
-    struct dirent **namelist;
-    unsigned int amount;
-} ctx;
-
+/**
+ * Utilities
+ */
 
 time_t sl_parse_time(struct tm base, const char *time_range){
     int res = sscanf(time_range, "%d:%d", &base.tm_hour, &base.tm_min);
@@ -78,6 +79,7 @@ bool sl_is_allowed(const struct sl_rule_t *rule){
     return allow_flag;
 }
 
+
 void sl_kill(const char *pid_string){
     pid_t pid = (pid_t) strtol(pid_string, NULL, 10);
     kill(pid, SIGTERM);
@@ -100,6 +102,16 @@ void sl_get_app_name(char *app_name, const char *pid){
     *strchr(app_name, '\n') = 0;
 }
 
+
+/**
+ * API stuff
+ */
+
+static struct {
+    struct dirent **namelist;
+    unsigned int amount;
+} ctx;
+
 int sl_find_app(char *app_name, const struct sl_rule_t *rule) {
     for (int j = 0; j < ctx.amount; ++j) {
         char *text_pid = ctx.namelist[j]->d_name;
@@ -112,7 +124,7 @@ int sl_find_app(char *app_name, const struct sl_rule_t *rule) {
 
 void sl_enum_restrict(const struct sl_rule_t *rules) {
     char app_name[64];
-    struct sl_rule_t *rule;
+    const struct sl_rule_t *rule;
     for (unsigned int i = 0; (rule = rules+i, rule->app != 0); i++) {
         //assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set SL_RULES_END for last rule");
 
@@ -149,8 +161,7 @@ int sl_selector(const struct dirent *d){
     }
 
     // filter dirs without current user creds
-    // TODO: find another way to check is process killable by current user
-    snprintf(path, 20-1, "/proc/%s/", d->d_name);
+    snprintf(path, 20, "/proc/%s/", d->d_name);
 
     if(stat(path, &stb)){
         printf("Failed stat for %s\n", path);
