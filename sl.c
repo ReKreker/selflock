@@ -5,7 +5,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <time.h>
 #include <sys/dir.h>
 
@@ -90,14 +89,13 @@ void sl_get_app_name(char *app_name, const char *pid){
     char path[64];
     snprintf(path, 64, "/proc/%s/comm", pid);
 
-    // TODO: rewrite with fopen
-    int fd = open(path, O_RDONLY);
-    if (fd == -1) {
+    FILE *fd = fopen(path, "r");
+    if (!fd) {
         printf("Cannot open file from %s", path);
         abort();
     }
-    read(fd, path, 64); // reuse variable for path of executed bin
-    close(fd);
+    fread(path, 64, 1, fd); // reuse variable for path of executed bin
+    fclose(fd);
 
     *strchr(path, '\n') = 0;
     strncpy(app_name, path, 64);
