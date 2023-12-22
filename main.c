@@ -1,9 +1,9 @@
 #include <assert.h>
+#include <unistd.h>
 
 #include "sl.h"
 
-// Allow by default. The last rules are more significant than the first ones
-// TODO: rewrite 'Deny by default' if there is only ACTION_ALLOW, so accordingly with ACTION_DENY
+// Deny by default if ACTION_ALLOW, so accordingly with ACTION_DENY and allow by default
 static struct sl_rule_t rules[] = {
         [__COUNTER__] = {
                 .app = "Telegram",
@@ -18,10 +18,14 @@ static struct sl_rule_t rules[] = {
 };
 
 int main() {
-    // TODO: add smth like poll to wait until new process in /proc
-    struct dirent **namelist;
-    int enum_amount = sl_enum_processes(&namelist);
-    assert(enum_amount > 0);
-    sl_restrict(&namelist, enum_amount);
-    sl_free_enum(&namelist, enum_amount);
+    // There is no way to get pid except repeatedly read /proc/
+    int rc;
+    while (1){
+        rc = sl_enum_init();
+        assert(rc > 0);
+        sl_enum_restrict(rules);
+        sl_enum_free();
+
+        sleep(2);
+    }
 }

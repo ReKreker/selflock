@@ -6,3 +6,5 @@ set(CMAKE_C_STANDARD 11)
 add_executable(selflock main.c
         sl.c
         sl.h)
+
+target_link_libraries(selflock PUBLIC inotifytools)

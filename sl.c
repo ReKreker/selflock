@@ -8,8 +8,14 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/dir.h>
 
 #include "sl.h"
+
+static struct {
+    struct dirent **namelist;
+    int amount;
+} ctx;
 
 int sl_match(const char *app_name, struct sl_rule_t *rule){
     switch (rule->mt) {
@@ -87,19 +93,17 @@ void sl_get_app_name(char *app_name, const char *pid){
     strncpy(app_name, path, 64);
 }
 
-int sl_restrict(struct dirent ***namelist, int enum_amount, struct sl_rule_t *rules) {
+void sl_enum_restrict(struct sl_rule_t *rules) {
     char app_name[64];
-    for (unsigned int i = 0; ; ++i) {
+    struct sl_rule_t *rule;
+    for (unsigned int i = 0; (rule = rules+i, rule->app != 0); i++) {
         //assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set SL_RULES_END for last rule");
-        struct sl_rule_t *rule = &rules[i];
-        if (rule->app == 0)
-            break;
 
         // look for application for rule
         int ret = -1;
         unsigned int j;
-        for (j = 0; j < enum_amount; ++j) {
-            char *text_pid = (*namelist)[j]->d_name;
+        for (j = 0; j < ctx.amount; ++j) {
+            char *text_pid = ctx.namelist[j]->d_name;
             sl_get_app_name(app_name, text_pid);
             ret = sl_match(app_name, rule);
             if (!ret) break;
@@ -112,9 +116,8 @@ int sl_restrict(struct dirent ***namelist, int enum_amount, struct sl_rule_t *ru
 
         // killing denied
         printf("To kill: %s\n", app_name);
-        sl_kill((*namelist)[j]->d_name);
+        sl_kill(ctx.namelist[j]->d_name);
     }
-    return 0;
 }
 
 int sl_selector(const struct dirent *d){
@@ -150,20 +153,26 @@ int sl_selector(const struct dirent *d){
     return 1;
 }
 
-int sl_enum_processes(struct dirent ***namelist){
-    int res = scandir("/proc", namelist, sl_selector, alphasort);
+int sl_enum_init(){
+    if(ctx.namelist != NULL){
+        puts("Hanging pointer - internal context didn't freed and nullified");
+        abort();
+    }
+
+    int res = scandir("/proc", &ctx.namelist, sl_selector, alphasort);
     if (res <= 0){
         puts("Scandir error for /proc\n");
         abort();
     }
+    ctx.amount = res;
     return res;
 }
 
-void sl_free_enum(struct dirent ***namelist, int enum_amount){
-    for (int i = 0; i < enum_amount; ++i) {
-        free((*namelist)[i]);
-        (*namelist)[i] = NULL;
+void sl_enum_free(){
+    for (int i = 0; i < ctx.amount; ++i) {
+        free(ctx.namelist[i]);
+        ctx.namelist[i] = NULL;
     }
-    free(*namelist);
-    *namelist = NULL;
+    free(ctx.namelist);
+    ctx.namelist = NULL;
 }
