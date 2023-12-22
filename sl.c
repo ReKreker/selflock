@@ -35,7 +35,7 @@ __attribute__((unused)) bool match_consists(const char *name_from_proc, const ch
 
 static struct {
     struct dirent **namelist;
-    int amount;
+    unsigned int amount;
 } ctx;
 
 
@@ -94,11 +94,20 @@ void sl_get_app_name(char *app_name, const char *pid){
         printf("Cannot open file from %s", path);
         abort();
     }
-    fread(path, 64, 1, fd); // reuse variable for path of executed bin
+    fread(app_name, 64, 1, fd);
     fclose(fd);
 
-    *strchr(path, '\n') = 0;
-    strncpy(app_name, path, 64);
+    *strchr(app_name, '\n') = 0;
+}
+
+int sl_find_app(char *app_name, const struct sl_rule_t *rule) {
+    for (int j = 0; j < ctx.amount; ++j) {
+        char *text_pid = ctx.namelist[j]->d_name;
+        sl_get_app_name(app_name, text_pid);
+        bool ret = rule->match_fn(app_name, rule->app);
+        if (ret) return j;
+    }
+    return -1;
 }
 
 void sl_enum_restrict(struct sl_rule_t *rules) {
@@ -108,23 +117,16 @@ void sl_enum_restrict(struct sl_rule_t *rules) {
         //assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set SL_RULES_END for last rule");
 
         // look for application for rule
-        int ret = 0;
-        unsigned int j;
-        for (j = 0; j < ctx.amount; ++j) {
-            char *text_pid = ctx.namelist[j]->d_name;
-            sl_get_app_name(app_name, text_pid);
-            ret = rule->match_fn(app_name, rule->app);
-            if (ret) break;
-        }
-        if (!ret) continue; // restricted app didn't run or not found
+        int pos = sl_find_app(app_name, rule);
+        if (pos == -1) continue; // restricted app didn't run or not found
 
         // checking
         if (sl_is_allowed(rule))
             continue;
 
         // killing denied
-        printf("To kill: %s\n", app_name);
-        sl_kill(ctx.namelist[j]->d_name);
+        printf("App to kill: %s\n", app_name);
+        sl_kill(ctx.namelist[pos]->d_name);
     }
 }
 
