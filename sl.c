@@ -54,7 +54,7 @@ time_t sl_parse_time(struct tm base, const char *time_range){
     return tmp;
 }
 
-bool sl_is_allowed(struct sl_rule_t *rule){
+bool sl_is_allowed(const struct sl_rule_t *rule){
     const time_t tt = time(NULL);
     struct tm *now = localtime(&tt);
     time_t from_epoch, to_epoch, now_epoch = mktime(now);
@@ -78,7 +78,7 @@ bool sl_is_allowed(struct sl_rule_t *rule){
     return allow_flag;
 }
 
-void sl_kill(char *pid_string){
+void sl_kill(const char *pid_string){
     pid_t pid = (pid_t) strtol(pid_string, NULL, 10);
     kill(pid, SIGTERM);
     sleep(1);
@@ -110,7 +110,7 @@ int sl_find_app(char *app_name, const struct sl_rule_t *rule) {
     return -1;
 }
 
-void sl_enum_restrict(struct sl_rule_t *rules) {
+void sl_enum_restrict(const struct sl_rule_t *rules) {
     char app_name[64];
     struct sl_rule_t *rule;
     for (unsigned int i = 0; (rule = rules+i, rule->app != 0); i++) {

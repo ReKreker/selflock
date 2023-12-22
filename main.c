@@ -4,7 +4,7 @@
 #include "sl.h"
 
 // Deny by default if ACTION_ALLOW, so accordingly with ACTION_DENY and allow by default
-static struct sl_rule_t rules[] = {
+static const struct sl_rule_t rules[] = {
         [__COUNTER__] = {
                 .app = "Telegram",
                 .match_fn = match_exact,
