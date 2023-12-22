@@ -8,8 +8,9 @@ static struct sl_rule_t rules[] = {
         [__COUNTER__] = {
                 .app = "Telegram",
                 .mt = MATCHTYPE_EXACT,
+                .act = ACTION_ALLOW,
                 .time = {
-                        [0] = {.act = ACTION_DENY, .from = "13:37", .to = "15:37"},
+                        [0] = {.from = "13:37", .to = "14:37"},
                         [1] = SL_RANGES_END
                 }
         },

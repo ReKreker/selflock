@@ -11,7 +11,6 @@ enum action {
 
 // TODO: add weekend-based time ranges
 struct sl_time_t {
-    enum action act;
     char *from;      // time range where 'enum action'
     char *to;        // is applying (based on current UTC)
 };
@@ -27,6 +26,7 @@ enum match_type {
 struct sl_rule_t {
     const char *app;                        // application name from /proc/PID/comm
     enum match_type mt;                     // matching type for app name
+    enum action act;                        // action for ranges
     struct sl_time_t time[MAX_TIME_RANGES]; // time ranges
 };
 

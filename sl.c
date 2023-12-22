@@ -44,30 +44,22 @@ bool sl_is_allowed(struct sl_rule_t *rule){
     struct tm *now = localtime(&tt);
     time_t from_epoch, to_epoch, now_epoch = mktime(now);
 
-    bool allow_flag = true;
-    int i = 0;
+    // Default disallow for ACTION_ALLOW ranges & allow for ACTION_DENY
+    bool allow_flag = rule->act == ACTION_DENY;
     struct sl_time_t t;
 
-    while ((t = rule->time[i], t.from && t.to)){
+    for (int i = 0; (t = rule->time[i], t.from && t.to) ; ++i) {
         from_epoch = sl_parse_time(*now, t.from);
         to_epoch = sl_parse_time(*now, t.to);
         assert(from_epoch != -1 && to_epoch != -1);
-        switch (t.act) {
-            case ACTION_ALLOW:
-                if (from_epoch <= now_epoch && now_epoch <= to_epoch)
-                    allow_flag = true;
-                break;
-            case ACTION_DENY:
-                if (from_epoch <= now_epoch && now_epoch <= to_epoch)
-                    allow_flag = false;
-                break;
-            default:
-                puts("Not implemented");
-                abort();
+
+        if (from_epoch <= now_epoch && now_epoch <= to_epoch) {
+            allow_flag ^= 1;
+            break;
         }
-        i++;
         assert(i <= MAX_TIME_RANGES && "Time ranges overflow - set SL_RANGES_END for last time range");
     }
+
     return allow_flag;
 }
 
