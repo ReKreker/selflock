@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SELFLOCK_SL_H
 #define SELFLOCK_SL_H
 
