@@ -43,3 +43,8 @@ By configuring the rules[] variable as shown above, users can effectively manage
 This utility aims to promote a balanced and efficient use of time by preventing excessive engagement with specific applications.
 
 The name for application is extracted from `/proc/PID/comm`.
+
+## Existing matching functions
+- **match_exact** - check if `rule->app` and `/proc/PID/comm` are the same
+- **match_starts_with** - check if `/proc/PID/comm` starts with `rule->app`
+- **match_consist** - check if `rule->app` is substring of `/proc/PID/comm`
