@@ -7,7 +7,7 @@
 static struct sl_rule_t rules[] = {
         [__COUNTER__] = {
                 .app = "Telegram",
-                .mt = MATCHTYPE_EXACT,
+                .match_fn = match_exact,
                 .act = ACTION_ALLOW,
                 .time = {
                         [0] = {.from = "13:37", .to = "14:37"},

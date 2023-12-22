@@ -15,17 +15,13 @@ struct sl_time_t {
     char *to;        // is applying (based on current UTC)
 };
 
-// TODO: rewrite to callback-based match_type
-enum match_type {
-    MATCHTYPE_EXACT,
-    MATCHTYPE_STARTS_WITH,
-    MATCHTYPE_CONSIST,
-};
+// Matching function for app name. Return true if matched otherwise return false
+typedef bool (*match_func)(const char *name_from_proc, const char *name_from_rule);
 
 #define MAX_TIME_RANGES 10
 struct sl_rule_t {
     const char *app;                        // application name from /proc/PID/comm
-    enum match_type mt;                     // matching type for app name
+    match_func match_fn;
     enum action act;                        // action for ranges
     struct sl_time_t time[MAX_TIME_RANGES]; // time ranges
 };

@@ -6,29 +6,39 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdbool.h>
 #include <time.h>
 #include <sys/dir.h>
 
 #include "sl.h"
+
+// Matching functions
+__attribute__((unused)) bool match_exact(const char *name_from_proc, const char *name_from_rule) {
+    if (strcmp(name_from_proc, name_from_rule) != 0)
+        return false;
+    return true;
+}
+
+__attribute__((unused)) bool match_starts_with(const char *name_from_proc, const char *name_from_rule) {
+    size_t max_len = strlen(name_from_rule);
+    if (strncmp(name_from_proc, name_from_rule, max_len) != 0)
+        return false;
+    return true;
+}
+
+__attribute__((unused)) bool match_consists(const char *name_from_proc, const char *name_from_rule) {
+    if (strstr(name_from_proc, name_from_rule) == NULL)
+        return false;
+    return true;
+}
+
+
+
 
 static struct {
     struct dirent **namelist;
     int amount;
 } ctx;
 
-int sl_match(const char *app_name, struct sl_rule_t *rule){
-    switch (rule->mt) {
-        case MATCHTYPE_EXACT:
-            if (!strcmp(app_name, rule->app))
-                return 0;
-            break;
-        default:
-            puts("Not implemented");
-            abort();
-    }
-    return -1;
-}
 
 time_t sl_parse_time(struct tm base, const char *time_range){
     int res = sscanf(time_range, "%d:%d", &base.tm_hour, &base.tm_min);
@@ -100,15 +110,15 @@ void sl_enum_restrict(struct sl_rule_t *rules) {
         //assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set SL_RULES_END for last rule");
 
         // look for application for rule
-        int ret = -1;
+        int ret = 0;
         unsigned int j;
         for (j = 0; j < ctx.amount; ++j) {
             char *text_pid = ctx.namelist[j]->d_name;
             sl_get_app_name(app_name, text_pid);
-            ret = sl_match(app_name, rule);
-            if (!ret) break;
+            ret = rule->match_fn(app_name, rule->app);
+            if (ret) break;
         }
-        if (ret == -1) continue; // restricted app didn't run
+        if (!ret) continue; // restricted app didn't run or not found
 
         // checking
         if (sl_is_allowed(rule))
