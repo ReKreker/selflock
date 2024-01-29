@@ -12,7 +12,7 @@ This utility is designed to prevent users from spending excessive time in specif
 To use this utility, simply edit the rules[] variable to specify the time limits for different applications. The utility will then enforce these limits, blocking access to applications once the specified time threshold is reached.
 
 ## Example Configuration
-In `main.c` there is tables with rules:
+In `config.c` there is tables with rules:
 ```c
 static const struct sl_rule_t rules_[] = {
         {
