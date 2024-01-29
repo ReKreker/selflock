@@ -17,7 +17,7 @@ In `main.c` there is tables with rules:
 static const struct sl_rule_t rules[] = {
         [__COUNTER__] = {
                 .app = "Telegram",
-                .match_fn = match_exact,
+                .match = match_exact,
                 .act = ACTION_ALLOW,
                 .time = {
                         [0] = {.from = "13:37", .to = "14:37"},
@@ -27,7 +27,7 @@ static const struct sl_rule_t rules[] = {
         },
         [__COUNTER__] = {
                 .app = "Steam",
-                .match_fn = match_contains,
+                .match = match_contains,
                 .act = ACTION_DENY,
                 .time = {
                         [0] = {.from = "12:00", .to = "18:00"},

@@ -9,19 +9,22 @@ enum action {
     ACTION_DENY
 };
 
+enum match_type {
+    MATCH_EXACT,
+    MATCH_STARTS_WITH,
+    MATCH_CONSIST,
+};
+
 // TODO: add weekend-based time ranges
 struct sl_time_t {
     char *from;      // time range where 'enum action'
     char *to;        // is applying (based on current UTC)
 };
 
-// Matching function for app name. Return true if matched otherwise return false
-typedef bool (*match_func)(const char *name_from_proc, const char *name_from_rule);
-
 #define MAX_TIME_RANGES 10
 struct sl_rule_t {
     const char *app;                        // application name from /proc/PID/comm
-    match_func match_fn;
+    enum match_type match;
     enum action act;                        // action for ranges
     struct sl_time_t time[MAX_TIME_RANGES]; // time ranges
 };
