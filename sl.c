@@ -216,3 +216,56 @@ void sl_enum_free(){
     free(ctx.namelist);
     ctx.namelist = NULL;
 }
+
+/*
+ * Reload config API
+ */
+
+void update_config(struct sl_rule_t *dl_rules, size_t size){
+    puts("Uploading new rules!");
+    void *tmp = realloc((void *)sl_rules, size);
+    if (tmp == NULL) {
+        free((void *)sl_rules);
+        sl_rules = NULL;
+        perror("Failed realloc");
+        return;
+    } else {
+        sl_rules = tmp;
+    }
+
+    memcpy((void *)sl_rules, dl_rules, size);
+}
+
+void reload_config(){
+    int rc;
+    size_t i_new, i_old = 0;
+    void *handle;
+    struct sl_rule_t **dl_rules_ptr, *dl_rules;
+
+    handle = dlopen("./libconfig.so", RTLD_LAZY);
+    if (handle == NULL){
+        perror("Cannot load libconfig");
+        abort();
+    }
+
+    dl_rules_ptr = dlsym(handle, "rules");
+    if (dl_rules_ptr == NULL){
+        fprintf(stderr, "Not fount 'rules': %s\n", dlerror());
+        abort();
+    }
+    dl_rules = *dl_rules_ptr;
+
+    // Get arrays size
+    for (i_new = 0; !IS_LAST_RULE(dl_rules + i_new); ++i_new) {}
+    if (sl_rules != NULL)
+        for (i_old = 0; !IS_LAST_RULE(sl_rules + i_old); ++i_old) {}
+
+    if (i_old != i_new || memcmp(dl_rules, sl_rules, sizeof(*dl_rules) * i_new) != 0)
+        update_config(dl_rules, sizeof(*dl_rules) * i_new);
+
+    rc = dlclose(handle);
+    if (rc) {
+        perror("Cannot unload libconfig");
+        abort();
+    }
+}
