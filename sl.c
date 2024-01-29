@@ -109,6 +109,11 @@ void sl_get_app_name(char *app_name, const char *pid){
 
     FILE *fd = fopen(path, "r");
     if (!fd) {
+        // when process is closed by OS
+        if (errno == ENOENT){
+            app_name[0] = 0;
+            return;
+        }
         printf("Cannot open file from %s", path);
         abort();
     }
