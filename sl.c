@@ -133,7 +133,8 @@ static struct {
     unsigned int amount;
 } ctx;
 
-int sl_find_app(char *app_name, const struct sl_rule_t *rule) {
+int sl_find_app(const struct sl_rule_t *rule) {
+    char app_name[64];
     for (int j = 0; j < ctx.amount; ++j) {
         char *text_pid = ctx.namelist[j]->d_name;
         sl_get_app_name(app_name, text_pid);
@@ -152,8 +153,8 @@ void sl_enum_restrict() {
         rule = sl_rules+i;
         //assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set SL_RULES_END for last rule");
 
-        // look for application for rule
-        int pos = sl_find_app(app_name, rule);
+        // look for application for rule in list of /proc/
+        int pos = sl_find_app(rule);
         if (pos == -1) continue; // restricted app didn't run or not found
 
         // checking
@@ -161,9 +162,9 @@ void sl_enum_restrict() {
             continue;
 
         // killing denied
-        printf("App to kill: %s\n", app_name);
         sl_kill(ctx.namelist[pos]->d_name);
     }
+    puts("--------------------------");
 }
 
 int sl_selector(const struct dirent *d){
