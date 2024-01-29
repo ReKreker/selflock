@@ -3,20 +3,6 @@
 
 #include "sl.h"
 
-// Deny by default if ACTION_ALLOW, so accordingly with ACTION_DENY and allow by default
-static const struct sl_rule_t rules[] = {
-        [__COUNTER__] = {
-                .app = "Telegram",
-                .match_fn = match_exact,
-                .act = ACTION_ALLOW,
-                .time = {
-                        [0] = {.from = "13:37", .to = "14:37"},
-                        [1] = SL_RANGES_END
-                }
-        },
-        [__COUNTER__] = SL_RULES_END
-};
-
 int main() {
     // There is no way to get pid except repeatedly read /proc/
     int rc;

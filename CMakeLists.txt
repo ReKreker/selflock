@@ -3,6 +3,7 @@ project(selflock C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_library(sl STATIC sl.h sl.c)
-add_executable(selflock main.c)
-target_link_libraries(selflock sl)
+add_library(config MODULE config.c)
+
+add_executable(selflock main.c sl.c)
+target_link_libraries(selflock INTERFACE config)

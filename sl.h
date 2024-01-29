@@ -11,7 +11,7 @@
 
 int sl_enum_init();
 
-void sl_enum_restrict(const struct sl_rule_t *rules);
+void sl_enum_restrict();
 
 void sl_enum_free();
 

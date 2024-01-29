@@ -14,27 +14,24 @@ To use this utility, simply edit the rules[] variable to specify the time limits
 ## Example Configuration
 In `main.c` there is tables with rules:
 ```c
-static const struct sl_rule_t rules[] = {
-        [__COUNTER__] = {
+static const struct sl_rule_t rules_[] = {
+        {
                 .app = "Telegram",
-                .match = match_exact,
+                .match = MATCH_EXACT,
                 .act = ACTION_ALLOW,
                 .time = {
-                        [0] = {.from = "13:37", .to = "14:37"},
-                        [1] = {.from = "18:00", .to = "19:00"},
-                        [2] = SL_RANGES_END
-                } // allow Telegram only at 13:37-14:37 & 18:00-19:00
+                        {.from = "15:00", .to = "16:59"},
+                }
         },
-        [__COUNTER__] = {
-                .app = "Steam",
-                .match = match_contains,
-                .act = ACTION_DENY,
+        {
+                .app = "steam",
+                .match = MATCH_CONSIST,
+                .act = ACTION_ALLOW,
                 .time = {
-                        [0] = {.from = "12:00", .to = "18:00"},
-                        [1] = SL_RANGES_END
-                } // allow ".*Steam.*" app all day except 12:00-18:00 
+                        {.from = "18:00", .to = "20:00"},
+                }
         },
-        [__COUNTER__] = SL_RULES_END
+        {.app = 0} // the last element for size calc
 };
 ```
 

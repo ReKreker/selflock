@@ -7,8 +7,14 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <sys/dir.h>
+#include <stdbool.h>
+#include <dlfcn.h>
+#include <errno.h>
 
 #include "sl.h"
+#include "config.h"
+
+const struct sl_rule_t *sl_rules = NULL;
 
 /**
  * match_* functions to match rule->app and /proc/PID/comm
@@ -71,11 +77,12 @@ bool sl_is_allowed(const struct sl_rule_t *rule){
 
     // Default disallow for ACTION_ALLOW ranges & allow for ACTION_DENY
     bool allow_flag = rule->act == ACTION_DENY;
-    struct sl_time_t t;
+    const struct sl_time_t *t;
 
-    for (int i = 0; (t = rule->time[i], t.from && t.to) ; ++i) {
-        from_epoch = sl_parse_time(*now, t.from);
-        to_epoch = sl_parse_time(*now, t.to);
+    for (int i = 0; !IS_LAST_RANGE(&rule->time[i]); ++i) {
+        t = &rule->time[i];
+        from_epoch = sl_parse_time(*now, t->from);
+        to_epoch = sl_parse_time(*now, t->to);
         assert(from_epoch != -1 && to_epoch != -1);
 
         if (from_epoch <= now_epoch && now_epoch <= to_epoch) {
@@ -125,16 +132,19 @@ int sl_find_app(char *app_name, const struct sl_rule_t *rule) {
     for (int j = 0; j < ctx.amount; ++j) {
         char *text_pid = ctx.namelist[j]->d_name;
         sl_get_app_name(app_name, text_pid);
-        bool ret = rule->match_fn(app_name, rule->app);
-        if (ret) return j;
+        bool ret = to_match(app_name, rule);
+        if (ret) {
+            printf("Found: %s\n", app_name);
+            return j;
+        }
     }
     return -1;
 }
 
-void sl_enum_restrict(const struct sl_rule_t *rules) {
-    char app_name[64];
+void sl_enum_restrict() {
     const struct sl_rule_t *rule;
-    for (unsigned int i = 0; (rule = rules+i, rule->app != 0); i++) {
+    for (unsigned int i = 0; !IS_LAST_RULE(sl_rules + i); i++) {
+        rule = sl_rules+i;
         //assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set SL_RULES_END for last rule");
 
         // look for application for rule
