@@ -104,8 +104,15 @@ bool sl_is_allowed(const struct sl_rule_t *rule) {
     return allow_flag;
 }
 
+// TODO: make app killing in another thread to avoid program locking
+void sl_kill(const char *pid_string) {
+    char app[64], cmd[0x100];
 
-void sl_kill(const char *pid_string){
+    sl_get_app_name(app, pid_string);
+    snprintf(cmd, 0x100, "notify-send -t 5000 -a \"Selflock\" \"Application %s will be killed in 5 seconds!\"", app);
+
+    system(cmd);
+    sleep(5);
     pid_t pid = (pid_t) strtol(pid_string, NULL, 10);
     kill(pid, SIGTERM);
     sleep(1);

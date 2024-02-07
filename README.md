@@ -45,3 +45,6 @@ The name for application is extracted from `/proc/PID/comm`.
 - **match_exact** - check if `rule->app` and `/proc/PID/comm` are the same
 - **match_starts_with** - check if `/proc/PID/comm` starts with `rule->app`
 - **match_consist** - check if `rule->app` is substring of `/proc/PID/comm`
+
+## Deps
+1) notify-send
