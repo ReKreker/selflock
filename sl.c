@@ -58,7 +58,7 @@ bool to_match(const char *name_from_proc, const struct sl_rule_t *rule) {
  * Utilities
  */
 
-char *sl_get_app_name(const char *pid);
+void sl_get_app_name(char app_name[64], const char *pid);
 
 bool sl_is_allowed(const struct sl_rule_t *rule);
 
@@ -112,14 +112,14 @@ void sl_kill(const char *pid_string){
     kill(pid, SIGKILL);
 }
 
-void sl_get_app_name(char *app_name, const char *pid){
+void sl_get_app_name(char app_name[64], const char *pid) {
     char path[64];
     snprintf(path, 64, "/proc/%s/comm", pid);
 
     FILE *fd = fopen(path, "r");
     if (!fd) {
         // when process is closed by OS
-        if (errno == ENOENT){
+        if (errno == ENOENT) {
             app_name[0] = 0;
             return;
         }
@@ -143,13 +143,12 @@ static struct {
 } ctx;
 
 int sl_find_app(const struct sl_rule_t *rule) {
-    char app_name[64];
+    char app_name[64], *text_pid;
     for (int j = 0; j < ctx.amount; ++j) {
-        char *text_pid = ctx.namelist[j]->d_name;
+        text_pid = ctx.namelist[j]->d_name;
         sl_get_app_name(app_name, text_pid);
         bool ret = to_match(app_name, rule);
         if (ret) {
-            printf("Found: %s\n", app_name);
             return j;
         }
     }
