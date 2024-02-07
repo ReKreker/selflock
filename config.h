@@ -28,7 +28,7 @@ struct sl_rule_t {
 };
 
 const struct sl_rule_t *rules;
-#define IS_LAST_RULE(rule_ptr) ((rule_ptr)->app[0] == 0)
+const unsigned short rules_amount;
 #define IS_LAST_RANGE(time_ptr) ((time_ptr)->to[0] == 0 && (time_ptr)->from[0] == 0)
 
 #endif //SL_CONFIG_H

@@ -15,6 +15,7 @@
 #include "config.h"
 
 const struct sl_rule_t *sl_rules = NULL;
+unsigned short sl_rules_amount = 0;
 
 /**
  * match_* functions to match rule->app and /proc/PID/comm
@@ -149,9 +150,8 @@ int sl_find_app(const struct sl_rule_t *rule) {
 
 void sl_enum_restrict() {
     const struct sl_rule_t *rule;
-    for (unsigned int i = 0; !IS_LAST_RULE(sl_rules + i); i++) {
-        rule = sl_rules+i;
-        //assert(i < sizeof(rules)/sizeof(*rules) && "Rules overflow - set SL_RULES_END for last rule");
+    for (unsigned int i = 0; i < sl_rules_amount; i++) {
+        rule = sl_rules + i;
 
         // look for application for rule in list of /proc/
         int pos = sl_find_app(rule);
@@ -244,9 +244,9 @@ void update_config(struct sl_rule_t *dl_rules, size_t size){
 
 void reload_config(){
     int rc;
-    size_t i_new, i_old = 0;
     void *handle;
     struct sl_rule_t **dl_rules_ptr, *dl_rules;
+    unsigned int *dl_rules_amount_ptr, dl_rules_amount;
 
     handle = dlopen("./libconfig.so", RTLD_LAZY);
     if (handle == NULL){
@@ -255,19 +255,19 @@ void reload_config(){
     }
 
     dl_rules_ptr = dlsym(handle, "rules");
-    if (dl_rules_ptr == NULL){
-        fprintf(stderr, "Not fount 'rules': %s\n", dlerror());
+    dl_rules_amount_ptr = dlsym(handle, "rules_amount");
+    if (dl_rules_ptr == NULL || dl_rules_amount_ptr == NULL) {
+        fprintf(stderr, "Not fount 'rules'/'rules_amount': %s\n", dlerror());
         abort();
     }
     dl_rules = *dl_rules_ptr;
+    dl_rules_amount = *dl_rules_amount_ptr;
 
-    // Get arrays size
-    for (i_new = 0; !IS_LAST_RULE(dl_rules + i_new); ++i_new) {}
-    if (sl_rules != NULL)
-        for (i_old = 0; !IS_LAST_RULE(sl_rules + i_old); ++i_old) {}
-
-    if (i_old != i_new || memcmp(dl_rules, sl_rules, sizeof(*dl_rules) * i_new) != 0)
-        update_config(dl_rules, sizeof(*dl_rules) * i_new);
+    if (sl_rules_amount != dl_rules_amount
+        || memcmp(dl_rules, sl_rules, sizeof(*dl_rules) * dl_rules_amount) != 0) {
+        update_config(dl_rules, sizeof(*dl_rules) * dl_rules_amount);
+        sl_rules_amount = dl_rules_amount;
+    }
 
     rc = dlclose(handle);
     if (rc) {

@@ -21,3 +21,4 @@ static const struct sl_rule_t rules_[] = {
         {.app = 0} // the last element for size calc
 };
 const struct sl_rule_t *rules = rules_;
+const unsigned short rules_amount = sizeof(rules_) / sizeof(*rules_);
