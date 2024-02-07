@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 #include "utils.h"
 
 time_t sl_parse_time(struct tm base, const char *time_range) {
@@ -47,8 +48,8 @@ bool sl_is_allowed(const struct sl_rule_t *rule) {
     return allow_flag;
 }
 
-// TODO: make app killing in another thread to avoid program locking
-void sl_kill(const char *pid_string) {
+// TODO: fix multiple sl_kill_cb while reading /proc each 2 seconds
+void *sl_kill_cb(void *pid_string) {
     char app[64], cmd[0x100];
 
     sl_get_app_name(app, pid_string);
@@ -60,6 +61,13 @@ void sl_kill(const char *pid_string) {
     kill(pid, SIGTERM);
     sleep(1);
     kill(pid, SIGKILL);
+
+    return NULL;
+}
+
+void sl_kill(const char *pid_string) {
+    pthread_t pthread;
+    pthread_create(&pthread, NULL, sl_kill_cb, (void *) pid_string);
 }
 
 // TODO: add ability to choose between /proc/%s/comm & /proc/%s/cmdline
