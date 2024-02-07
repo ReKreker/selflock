@@ -42,13 +42,15 @@ bool match_consists(const char *name_from_proc, const char *name_from_rule) {
     return true;
 }
 
-typedef bool (*match_t)(const char* proc, const char *rule);
+typedef bool (*match_t)(const char *proc, const char *rule);
+
 match_t funcs[] = {
         [MATCH_EXACT] = match_exact,
         [MATCH_STARTS_WITH] = match_starts_with,
         [MATCH_CONSIST] = match_consists
 };
-bool to_match(const char *name_from_proc, const struct sl_rule_t* rule){
+
+bool to_match(const char *name_from_proc, const struct sl_rule_t *rule) {
     return funcs[rule->match](name_from_proc, rule->app);
 }
 
@@ -56,7 +58,13 @@ bool to_match(const char *name_from_proc, const struct sl_rule_t* rule){
  * Utilities
  */
 
-time_t sl_parse_time(struct tm base, const char *time_range){
+char *sl_get_app_name(const char *pid);
+
+bool sl_is_allowed(const struct sl_rule_t *rule);
+
+void sl_kill(const char *pid_string);
+
+time_t sl_parse_time(struct tm base, const char *time_range) {
     int res = sscanf(time_range, "%d:%d", &base.tm_hour, &base.tm_min);
     if (res != 2) {
         printf("Wrong time format '%s' use something like '13:37'", time_range);
@@ -64,14 +72,14 @@ time_t sl_parse_time(struct tm base, const char *time_range){
     }
 
     time_t tmp = mktime(&base);
-    if (tmp == -1){
+    if (tmp == -1) {
         printf("Cannot convert time(%s) to epoch", time_range);
         abort();
     }
     return tmp;
 }
 
-bool sl_is_allowed(const struct sl_rule_t *rule){
+bool sl_is_allowed(const struct sl_rule_t *rule) {
     const time_t tt = time(NULL);
     struct tm *now = localtime(&tt);
     time_t from_epoch, to_epoch, now_epoch = mktime(now);
@@ -167,7 +175,7 @@ void sl_enum_restrict() {
     puts("--------------------------");
 }
 
-int sl_selector(const struct dirent *d){
+int sl_selector(const struct dirent *d) {
     char letter;
     const char *name;
     char path[20];
@@ -179,7 +187,7 @@ int sl_selector(const struct dirent *d){
 
     // filter non-numeric
     name = d->d_name;
-    while ((letter = *name)){
+    while ((letter = *name)) {
         if (letter < '0' || '9' < letter)
             return 0;
         name++;
@@ -188,7 +196,7 @@ int sl_selector(const struct dirent *d){
     // filter dirs without current user creds
     snprintf(path, 20, "/proc/%s/", d->d_name);
 
-    if(stat(path, &stb)){
+    if (stat(path, &stb)) {
         printf("Failed stat for %s\n", path);
         abort();
     }
@@ -199,14 +207,14 @@ int sl_selector(const struct dirent *d){
     return 1;
 }
 
-int sl_enum_init(){
-    if(ctx.namelist != NULL){
+int sl_enum_init() {
+    if (ctx.namelist != NULL) {
         puts("Hanging pointer - internal context didn't freed and nullified");
         abort();
     }
 
     int res = scandir("/proc", &ctx.namelist, sl_selector, alphasort);
-    if (res <= 0){
+    if (res <= 0) {
         puts("Scandir error for /proc\n");
         abort();
     }
@@ -214,7 +222,7 @@ int sl_enum_init(){
     return res;
 }
 
-void sl_enum_free(){
+void sl_enum_free() {
     for (int i = 0; i < ctx.amount; ++i) {
         free(ctx.namelist[i]);
         ctx.namelist[i] = NULL;
@@ -227,11 +235,11 @@ void sl_enum_free(){
  * Reload config API
  */
 
-void update_config(struct sl_rule_t *dl_rules, size_t size){
+void update_config(struct sl_rule_t *dl_rules, size_t size) {
     puts("Uploading new rules!");
-    void *tmp = realloc((void *)sl_rules, size);
+    void *tmp = realloc((void *) sl_rules, size);
     if (tmp == NULL) {
-        free((void *)sl_rules);
+        free((void *) sl_rules);
         sl_rules = NULL;
         perror("Failed realloc");
         return;
@@ -239,17 +247,17 @@ void update_config(struct sl_rule_t *dl_rules, size_t size){
         sl_rules = tmp;
     }
 
-    memcpy((void *)sl_rules, dl_rules, size);
+    memcpy((void *) sl_rules, dl_rules, size);
 }
 
-void reload_config(){
+void reload_config() {
     int rc;
     void *handle;
     struct sl_rule_t **dl_rules_ptr, *dl_rules;
     unsigned int *dl_rules_amount_ptr, dl_rules_amount;
 
     handle = dlopen("./libconfig.so", RTLD_LAZY);
-    if (handle == NULL){
+    if (handle == NULL) {
         perror("Cannot load libconfig");
         abort();
     }

@@ -6,7 +6,7 @@
 int main() {
     // There is no way to get pid except repeatedly read /proc/
     int rc;
-    while (1){
+    while (1) {
         reload_config();
         rc = sl_enum_init();
         assert(rc > 0);
