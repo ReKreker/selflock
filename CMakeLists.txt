@@ -3,7 +3,12 @@ project(selflock C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_library(config MODULE config.c)
+add_library(config MODULE src/config.c)
+target_include_directories(config PRIVATE src/include)
 
-add_executable(selflock main.c sl.c)
-target_link_libraries(selflock INTERFACE config)
+add_library(sources STATIC src/match.c src/sl.c src/utils.c)
+target_include_directories(sources PRIVATE src/include)
+
+add_executable(selflock main.c)
+target_link_libraries(selflock PRIVATE sources
+        INTERFACE config)
