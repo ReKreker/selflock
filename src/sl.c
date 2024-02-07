@@ -15,11 +15,6 @@
 const struct sl_rule_t *sl_rules = NULL;
 unsigned short sl_rules_amount = 0;
 
-
-/**
- * API stuff
- */
-
 static struct {
     struct dirent **namelist;
     unsigned int amount;
