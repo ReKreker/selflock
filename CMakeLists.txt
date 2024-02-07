@@ -8,7 +8,7 @@ target_include_directories(config PRIVATE src/include)
 
 add_library(sources STATIC src/match.c src/sl.c src/utils.c)
 target_include_directories(sources PRIVATE src/include)
+target_link_libraries(sources INTERFACE config)
 
 add_executable(selflock main.c)
-target_link_libraries(selflock PRIVATE sources
-        INTERFACE config)
+target_link_libraries(selflock PRIVATE sources)

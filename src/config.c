@@ -47,5 +47,6 @@ static const struct sl_rule_t rules_[] = {
                 }
         }
 };
-const struct sl_rule_t *rules = rules_;
+
+const struct sl_rule_t *rules = (struct sl_rule_t *) rules_;
 const unsigned short rules_amount = sizeof(rules_) / sizeof(*rules_);

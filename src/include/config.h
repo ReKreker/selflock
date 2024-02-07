@@ -27,8 +27,8 @@ struct sl_rule_t {
     struct sl_time_t time[MAX_TIME_RANGES]; // time ranges
 };
 
-const struct sl_rule_t *rules;
-const unsigned short rules_amount;
+extern const struct sl_rule_t *rules;
+extern const unsigned short rules_amount;
 #define IS_LAST_RANGE(time_ptr) ((time_ptr)->to[0] == 0 && (time_ptr)->from[0] == 0)
 
 #endif //SL_CONFIG_H
