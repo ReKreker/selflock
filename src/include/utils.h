@@ -7,10 +7,15 @@
 
 #include "config.h"
 
+#define TIMEOUT_BEFORE_KILL 10u
+
 time_t sl_parse_time(struct tm base, const char *time_range);
 
 bool sl_is_allowed(const struct sl_rule_t *rule);
 
+/*
+ * To kill program in N seconds in another thread
+ */
 void sl_kill(const char *pid_string);
 
 void sl_get_app_name(char app_name[64], const char *pid);

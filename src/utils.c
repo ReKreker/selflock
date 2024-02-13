@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
-#include <pthread.h>
+#include <limits.h>
 #include "utils.h"
 
 time_t sl_parse_time(struct tm base, const char *time_range) {
@@ -48,26 +48,29 @@ bool sl_is_allowed(const struct sl_rule_t *rule) {
     return allow_flag;
 }
 
-// TODO: fix multiple sl_kill_cb while reading /proc each 2 seconds
-void *sl_kill_cb(void *pid_string) {
+void sl_show_kill_notif(const char *pid_string) {
     char app[64], cmd[0x100];
-
     sl_get_app_name(app, pid_string);
-    snprintf(cmd, 0x100, "notify-send -t 5000 -a \"Selflock\" \"Application %s will be killed in 5 seconds!\"", app);
-
+    snprintf(cmd, 0x100, "notify-send -t 5000 -a \"Selflock\" \"Application '%s' will be killed in %u seconds!\"",
+             app,
+             TIMEOUT_BEFORE_KILL);
     system(cmd);
-    sleep(5);
-    pid_t pid = (pid_t) strtol(pid_string, NULL, 10);
-    kill(pid, SIGTERM);
-    sleep(1);
-    kill(pid, SIGKILL);
-
-    return NULL;
 }
 
 void sl_kill(const char *pid_string) {
-    pthread_t pthread;
-    pthread_create(&pthread, NULL, sl_kill_cb, (void *) pid_string);
+    long long pid_ll;
+    pid_t pid;
+
+    pid_ll = strtoll(pid_string, NULL, 10);
+    assert(pid_ll != 0 && pid_ll != LLONG_MIN && pid_ll != LLONG_MIN && "Parsing pid error");
+    pid = (pid_t) pid_ll;
+    assert(pid != 0 && "PID is zero");
+
+    sl_show_kill_notif(pid_string);
+    sleep(TIMEOUT_BEFORE_KILL);
+    kill(pid, SIGTERM);
+    sleep(1);
+    kill(pid, SIGKILL);
 }
 
 // TODO: add ability to choose between /proc/%s/comm & /proc/%s/cmdline
