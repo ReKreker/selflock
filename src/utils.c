@@ -1,23 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
+#include <sys/time.h>
 #include "utils.h"
+
+zlog_category_t *c;
 
 time_t sl_parse_time(struct tm base, const char *time_range) {
     int res = sscanf(time_range, "%d:%d", &base.tm_hour, &base.tm_min);
     if (res != 2) {
-        printf("Wrong time format '%s' use something like '13:37'", time_range);
+        zlog_fatal(c, "Wrong time format '%s' use something like '13:37'", time_range);
         abort();
     }
 
     time_t tmp = mktime(&base);
     if (tmp == -1) {
-        printf("Cannot convert time(%s) to epoch", time_range);
+        zlog_fatal(c, "Cannot convert time(%s) to epoch", time_range);
         abort();
     }
     return tmp;
@@ -57,8 +59,42 @@ void sl_show_kill_notif(const char *pid_string) {
     system(cmd);
 }
 
+static sl_kill_list_t klist[KILL_LIST_MAX_SIZE] = {};
+
+// Return 0 if new, -1 if exists
+int sl_add_to_klist(struct timeval *tv, pid_t pid) {
+    for (unsigned int i = 0; i < KILL_LIST_MAX_SIZE; ++i) {
+        if (klist[i].pid == pid) return -1;
+        if (klist[i].pid != 0) continue;
+        klist[i].pid = pid;
+        memcpy(&klist[i].timestamp, tv, sizeof(*tv));
+        return 0;
+    }
+    zlog_fatal(c, "Overflow klist!");
+    abort();
+}
+
+void sl_update_klist(unsigned index) {
+    int rc;
+
+    rc = kill(klist[index].pid, SIGTERM);
+    if (!rc) goto flush_entry;
+    zlog_error(c, "Cannot send SIGTERM to %d: %s", klist[index].pid, strerror(errno));
+    rc = kill(klist[index].pid, SIGKILL);
+    if (!rc) goto flush_entry;
+    zlog_fatal(c, "Cannot send SIGKILL to %d: %s", klist[index].pid, strerror(errno));
+    abort();
+
+    flush_entry:
+    klist[index].pid = 0;
+    memset(&klist[index].timestamp, 0, sizeof(klist[index].timestamp));
+}
+
 void sl_kill(const char *pid_string) {
     long long pid_ll;
+    unsigned i;
+    int rc;
+    struct timeval tv;
     pid_t pid;
 
     pid_ll = strtoll(pid_string, NULL, 10);
@@ -66,11 +102,21 @@ void sl_kill(const char *pid_string) {
     pid = (pid_t) pid_ll;
     assert(pid != 0 && "PID is zero");
 
-    sl_show_kill_notif(pid_string);
-    sleep(TIMEOUT_BEFORE_KILL);
-    kill(pid, SIGTERM);
-    sleep(1);
-    kill(pid, SIGKILL);
+    rc = gettimeofday(&tv, NULL);
+    if (rc) {
+        zlog_fatal(c, "Cannot get timestamp: %s", strerror(errno));
+        return;
+    }
+
+    for (i = 0; i < KILL_LIST_MAX_SIZE; ++i)
+        if (klist[i].pid == pid && klist[i].timestamp.tv_sec + TIMEOUT_BEFORE_KILL < tv.tv_sec) {
+            sl_update_klist(i);
+            return;
+        }
+
+    rc = sl_add_to_klist(&tv, pid);
+    if (rc == 0)
+        sl_show_kill_notif(pid_string);
 }
 
 // TODO: add ability to choose between /proc/%s/comm & /proc/%s/cmdline
@@ -85,7 +131,7 @@ void sl_get_app_name(char app_name[64], const char *pid) {
             app_name[0] = 0;
             return;
         }
-        printf("Cannot open file from %s", path);
+        zlog_fatal(c, "Cannot open file from %s", path);
         abort();
     }
     fread(app_name, 64, 1, fd);

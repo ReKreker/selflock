@@ -2,6 +2,8 @@
 #ifndef SELFLOCK_SL_H
 #define SELFLOCK_SL_H
 
+void sl_init_logger();
+
 // Dynamically load module with config if it's updated
 void reload_config();
 

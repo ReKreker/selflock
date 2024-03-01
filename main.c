@@ -4,8 +4,9 @@
 #include "sl.h"
 
 int main() {
-    // There is no way to get pid except repeatedly read /proc/
     int rc;
+
+    sl_init_logger();
     while (1) {
         reload_config();
         rc = sl_enum_init();

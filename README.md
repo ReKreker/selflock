@@ -47,3 +47,13 @@ _The name for application is extracted from `/proc/PID/comm`._
 ## Deps
 
 1) notify-send - to send notifications
+
+## Build
+
+```
+git clone --recurse-submodules https://github.com/ReKreker/selflock
+cd selflock
+cmake . -Bbuild -DCMAKE_BUILD_TYPE=Release
+cd build
+make
+```

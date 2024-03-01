@@ -1,0 +1,3 @@
+[submodule "ext/zlog"]
+	path = ext/zlog
+	url = https://github.com/HardySimpson/zlog
